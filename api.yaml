@@ -1,0 +1,4144 @@
+openapi: "3.0.1"
+
+info:
+  title: "Kronos Orchestrator"
+  description: |
+    Kronos Orhcestrator serverless Backend API.
+    
+    GitLab Project: [Orchestrator Serverless](https://code.aws.mpac.ca/kronos/orchestrator-serverless).
+    See the frontend also, [Orchestrator UI](https://code.aws.mpac.ca/kronos/orchestrator-ui)
+    
+    To easily test the API, use the Test feature on AWS API Gateway directly. 
+    **Note**: 'Testing' the API uses real calls, not mocks.
+  version: "1.0"
+  contact: 
+    name: MPAC IT Support
+    url: "https://itsupport.aws.mpac.ca/"
+    
+servers:
+- description: AWS API Gatway URL. 
+  url: "https://7sxz67kmnd.execute-api.ca-central-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "dev"
+      
+tags:
+  - name: Playground
+    description: Calls to functions related to using Orchestrator's LLM testing page.
+    externalDocs:
+      description: "Documentation: Playground"
+      url: 'https://mpacit.atlassian.net/wiki/spaces/SI/pages/784662806'
+  - name: Data Sources
+    description: Calls to functions related to managing and querying data sources.
+    externalDocs:
+      description: "Documentation: Data Sources"
+      url: 'https://mpacit.atlassian.net/wiki/spaces/SI/pages/786399540'
+  - name: Endpoints
+    description: Calls to functions related managing or using endpoints.
+    externalDocs:
+      description: "Documentation: Endpoints"
+      url: 'https://mpacit.atlassian.net/wiki/spaces/SI/pages/786333946'
+  - name: Workflows
+    description: Calls to functions related to managing, creating, or using workflows.
+    externalDocs:
+      description: "Documentation: Workflows"
+      url: 'https://mpacit.atlassian.net/wiki/spaces/SI/pages/786333956'
+  - name: Options
+    description: |
+      **Note:** All default OPTION method specifications, as exported from AWS API Gateway. 
+      
+      For more information on options see [Add Confluence doc here. Explain setup in template.yaml, and CreateResposne proxy integration.]
+    externalDocs:
+      description: |
+        Documentation: AWS API Gateway
+      url: 'https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html'
+      
+paths:
+
+  # PLAYGROUND
+  # ----------
+
+  /playground/invoke-static:
+    post:
+      summary: Invokes LLM responses in static mode
+      description: |
+        This backend function specifically handles static invocations within Playground.
+        
+        **Static mode:** Returns the model's response only once it is fully complete.
+      tags: 
+        - Playground
+      operationId: playgroundInvokeStatic
+      requestBody:
+        description: |
+          User inputs, and any previous inputs / ouputs in the conversation session are sent to procduce a new response output. 
+          
+          The model's configuration parameters are also sent during invocation. 
+          For more information about these parameters, [click here](https://mpacit.atlassian.net/wiki/spaces/SI/pages/784662806/).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeRequest'
+      responses:
+        "200":
+          description: Successfully invoked model using static mode.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvokeResponse'
+        '500':
+          description: Internal server error. Invocation failed.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-InvokeStaticModelFunction-oUIKMsxVQERt/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /playground/invoke-streaming:
+    post:
+      summary: Invokes LLM responses in streaming mode
+      description: |
+        This backend function specifically handles streaming invocations within Playground.
+        
+        **Streaming mode:** returns the models response incrementally as it is generated.
+      tags: 
+        - Playground
+      operationId: playgroundInvokeStreaming
+      requestBody:
+        description: |
+          User inputs, and any previous inputs / ouputs in the conversation session are sent to procduce a new response output.
+          
+          The model's configuration parameters are also sent during invocation. 
+          For more information about these parameters, [click here](https://mpacit.atlassian.net/wiki/spaces/SI/pages/784662806/).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeRequest'
+      responses:
+        "200":
+          description: |
+            **VERIFY THIS** The model's response will be streaming back to the UI by updating incrementally updating the below object. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvokeResponse'
+        '500':
+          description: Internal server error. Invocation failed.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-InvokeStreamingModelFuncti-r95F0yyIZkSR/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+
+  # DATA SOURCES
+  # ------------
+
+  /context-source:
+    get:
+      summary: Retreive a single data source
+      description: |
+        Specify the ID of the target data source, and retrieve its database record. 
+        
+        Does not include infromation on contents contained in the data source. 
+      tags: 
+        - Data Sources
+      operationId: getDataSource
+      parameters:
+      - name: id
+        description: Unique ID value of Data Source.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200": 
+          description: Successfully retreived data source.
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/DataSource'
+        "400":
+          description: Invalid request. Data Source ID required.
+        "404":
+          description: Invalid request. Data source ID not found. 
+        "500":
+          description: Internal server error. Data Source not retreived. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetContextSourceFunction-NAouQQzKSdJW/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      summary: Delete a data source
+      description: |
+        Specify a target data source. The data source's contents will be deleted from Weaviate, and all other information about it will be removed from the PostgreSQL database. 
+      tags: 
+        - Data Sources
+      operationId: deleteDataSource
+      parameters:
+      - name: id
+        description: Unique ID value of Data Source.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Successfully deleted Data Source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        "404":
+          description: Invalid request. Data Source ID not found.
+        "500":
+          description: Internal server error.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-DeleteContextSourceFunctio-gLsqpEpALVou/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+        
+  /context-sources:
+    get:
+      summary: Retreive all data sources
+      description: |
+        Retrieve information on all data source connections. 
+        
+        Does not contain infromation on contents contained within the data sources. 
+      tags: 
+        - Data Sources
+      operationId: getDataSources
+      responses:
+        "200":
+          description: Successfully retreived all data sources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSources'
+        "500":
+          description: Internal server error. Data sources not retreived.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllContextSourcesFuncti-TfXjxZcgY54t/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  
+  /context-source/create:
+    post:
+      summary: Create a new data source
+      description: |
+        Create a new [Data Source](https://mpacit.atlassian.net/wiki/spaces/SI/pages/786399540). A new Weaviate schema will be created to save all context added later to the data source. An entry in the PostgreSQL database will also be created to reference the data source.
+      tags: 
+        - Data Sources
+      operationId: createContextSource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of the Data Source.
+                  example: ExampleDataSource
+                type:
+                  type: string
+                  description: The type of Data Source (Only option is KRONOS currently).
+                  example: "KRONOS"
+      responses:
+        "200":
+          description: Successfully created Data Source.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSource'
+        "409":
+          description: Invalid request. Data Source name already exists.
+        "500":
+          description: Internal server error. Data Source not created.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-CreateContextSourceFunctio-X7mcWPwm8lKt/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  
+  /context-source/query:
+    get:
+      summary: Retireve context relevant to input text
+      description: |
+        Connects to Weaviate database to obtain X amount of context chunks from a specific Data Source.
+        
+        Context chunks are used within Orhcestrator to provide relevant context directly to the LLM alongside user input.
+      tags: 
+        - Data Sources
+      operationId: queryWeaviate
+      parameters:
+      - name: id
+        description: Unique ID value of Data Source.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: query
+        description: Any text string.
+        example: "What is MPAC's IT Policy?"
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: count
+        description: Number of context results to return
+        in: query
+        required: true
+        schema:
+          type: integer 
+      responses:
+        "200":
+          description: Successful query. Context chunks returned. 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                description: List of returned context chunk text.
+                example: ["Text from chunk1","Text from chunk 2"]
+        "400":
+          description: Invalid request. Data Source ID or query count not provided. 
+        "500":
+          description: Error while querying Weaviate database.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-QueryContextSourceFunction-sh5Bcwcn8DJh/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /context-source/uploadFiles:
+    post:
+      summary: Upload files to a Data Source
+      description: |
+        This function ... SQS
+      tags: 
+        - Data Sources
+      operationId: dataSourceUploadFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceUploadFiles'
+      responses:
+       "200":
+          description: Successfully uploaded files.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+       "500": 
+          description: Internal server error. Files not uploaded.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-SaveUploadFilesToS3Functio-KHyY0NBQN2Xi/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /context-source/webScraping:
+    post:
+      summary: Send SQS message to trigger web scraping
+      description: |
+        Specify a list of URLs to be scraped and the taget Data Source's ID and name. The Data Source name also acts `class_name`, which specifies a class where scraped contents will be stored within Weaviate. 
+        
+        This function does not handle scraping directly, but sends an SQS message with the provided data to process the scraping asynchronously.
+      tags: 
+        - Data Sources
+      operationId: postWebScraping
+      requestBody:
+        description: Required data for backend processing.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScrapeRequest'
+      responses:
+        "200":
+          description: Successfully sent SQS messages to trigger web scraping 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        "500":
+          description: Internal server error. SQS messages not sent, web scraping not queued.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-SaveWebContentsNotificatio-u7Wd1Xyf22Jc/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags:
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /context-source/getUploadDataStatus:
+    post:
+      summary: Retrieve upload status of added context
+      description: Retrieve the upload statuses for context that has been added to a data source. This indicates whether it has been succesfully loaded into the Weaviate database yet or not. 
+      tags: 
+        - Data Sources
+      operationId: getUploadDataStatus
+      requestBody:
+        description: | 
+          **Note:** In the below example, each element is an individual example of what the request body array may contain. See the schema for clarification. 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceUploadStatusRequest'
+      responses:
+        "200":
+          description: Successfully retreived status(es).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceUploadStatus'
+        "500":
+          description: Internal server error. Status(es) not retreived.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetUploadDataStatusFunctio-ZffTxyYJhBiz/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /context-source/getUploadDataInfo:
+    post:
+      summary: Retrieve Data Source metadata
+      description: |
+        Retrieves information about what is contained in a data source. 
+        
+        This includes metadata on all of the files and scraped websites it may contain, and the total number of each.
+      tags: 
+        - Data Sources
+      operationId: getUploadDataInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dataSourceId:
+                  type: string
+                  format: uuid
+                  description: Unique ID of data source
+              required:
+                - dataSourceId
+      responses:
+        "200":
+          description: Data Source information successfully retreived. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceMetadata'
+        "400":
+          description: Invalid request. Data Source ID required.
+        "500":
+          description: Internal server error. Info not retireved. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetUploadDataInfoFunction-tXD672lalclY/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /context-source/metrics:
+    get:
+      summary: Retrieve data source metrics
+      description: Retreive a target data source's metrics. In the Orchestrator UI, these are used for the info display at the top of a data source page. 
+      tags: 
+        - Data Sources
+      operationId:
+      parameters:
+      - name: id
+        description: Unique ID value of Data Source.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Successfully retreived data source metrics. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceMetrics'
+        "404":
+          description: Invalid request. Data Source ID does not exist.
+        "500": 
+          description: Internal server error. Data source metrics not retreived. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetContextSourceMetricsFun-XoxWYJrgYlWc/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /weaviate/get:
+    get:
+      summary: Retrieve context chunks from Weaviate
+      description: |
+        Retireve all context chunks from Weaviate for a specific Data Source.
+        
+        **Note:** This API call is designed to populate the list of context chunks in the Data Sources view page. 
+      tags: 
+        - Data Sources
+      operationId: getContextWeaviate
+      parameters: 
+        - name: id
+          description: The ID of target Data Source
+          in: query
+          required: true
+          example: 1
+          schema:
+            type: string      
+      responses:
+        "200":
+          description: Successfully retreived context from Weaviate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWeaviate'
+        "500": 
+          description: Internal server error. Context from Weaviate not retireved. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetWeaviateFunction-aTrik7a0N1wb/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /weaviate/batch-delete:
+    delete:
+      summary: Delete all context from a single source.
+      description: |
+        Delete all context chunks within Weaviate and the context source information in PostreSQL.
+        
+        Specify which Data Source ID to target, and the filename / URL of the existing context source you wish to delete.
+      tags:
+        - Data Sources
+      operationId: batchDeleteWeaviate
+      parameters:
+      - name: id 
+        description: Unique ID of context source.
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: data_source_name 
+        description: Name of context source (file name or URL).
+        example: example_file.pdf
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Context source deleted from both Weaviate vector database and PostgreSQL database.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        "404": 
+          description: Error. Provided context source ID or index name does not exist. 
+        "500": 
+          description: Internal server error. Context source not deleted.
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-DeleteWeaviateFunction-03KPxnXzOdAk/invocations"
+        passthroughBehavior: "when_no_match"
+    options:
+      tags:
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  # ENDPOINTS
+  # ---------
+
+  /endpoint:
+    get:
+      summary: Get single endpoint configuration
+      description: Returns a single endpoint and all of its configuration settings.
+      tags: 
+        - Endpoints
+      operationId: getEndpoint
+      parameters:
+        - name: id
+          description: Unique ID value of endpoint
+          example: 1
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": 
+          description: Successfully found endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Endpoint'
+        "400":
+          description: Invalid request, endpoint ID required.
+        "404":
+          description: Endpoint not found.
+        "500":
+          description: Internal server error. Endpoint not fetched.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetEndpointFunction-uRvduN8w7Uww/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    delete:
+      summary: Delete an endpoint
+      description: Deletes a single endpoint and all of its configuration settings.
+      tags: 
+        - Endpoints
+      operationId: deleteEndpoint
+      parameters:
+        - name: id
+          description: Unique ID value of endpoint
+          example: 1
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": 
+          description: Successfully deleted endpoint.
+          content:
+            application/json:
+              example: 
+                success: true
+                message: Endpoint deleted successfully.
+        "404":
+          description: Endpoint with provided ID not found.
+        "500":
+          description: Internal server error. Endpoint not deleted.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-DeleteEndpointsFunction-1aFegOT3qVlP/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    patch:
+      summary: Update configuration of an endpoint
+      description: Update the instructions, data source, and other parameter settings of an existing endpoint. 
+      tags: 
+        - Endpoints
+      operationId: patchEndpoint
+      parameters:
+      - name: id
+        description: Unique ID value of endpoint
+        example: 1
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully updated endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        "404":
+          description: Endpoint ID not found. It should exist, unsure what went wrong.
+        "500":
+          description: Internal server error.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-PatchEndpointUpdatesFuncti-ZIGop56bmIw0/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"    
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoints:
+    get:
+      summary: Retrieve all endpoints
+      description: |-
+        Returns a list of all available [Endpoints](https://mpacit.atlassian.net/wiki/spaces/SI/pages/786333946). Returned list also includes configuration settings.
+      tags: 
+        - Endpoints
+      operationId: GetEndpoints
+      responses:
+        "200":
+          description: All endpoints sucessfully fetched.
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Endpoint'
+        "500": 
+          description: Error fetching all endpoints.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllEndpointsFunction-0n4ffAhWhJhT/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoint/create:
+    post:
+      summary: Create a new endpoint
+      description: |
+        Create and save an endpoint and its configuration settings.
+        
+        **Note:** ID creation and timestamps handled by postgreSQL database. 
+      tags: 
+        - Endpoints
+      operationId: createEndpoint
+      requestBody:
+        description: Data required to create a new endpoint
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointCreate'
+      responses:
+        "200":
+          description: Endpoint successfully created.
+          content:
+            application/json: # Should this be an array when multiple responses are returned?
+              example: 
+                sucess: true
+                message: Endpoint created successfully
+        "400":
+          description: Error, specified endpoint name already exists.
+        "500":
+          description: Internal server error. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-CreateEndpointFunction-pQvF6hQpoSei/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoint/invoke:
+    post:
+      summary: Request resposne from endpoint
+      description: |
+        Invoke an endpoint by specifying its ID and providing an array of input messages. Input messages include initial user input, as well as previous inputs and model responses (if applicable). 
+        
+        This function returns only a completion status. The response is saved directly to 
+    
+      tags: 
+        - Endpoints
+      operationId: InvokeEndpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointInvokeRequest'
+      responses:
+        "200":
+          description: |
+            Successfully invoked endpoint.
+            
+            
+            **Note**: The response object is of type `any`. Each model has a different static response handler that returns output which should conform to the below schema.  
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvokeResponse'
+        "400":
+          description: Endpoint is set to streaming mode, and cannot be invoked statically.
+        "404":
+          description: Endpoint ID not found.
+        "500":
+          description: Internal server error. Model not invoked.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-InvokeStaticEndpointFuncti-RvWwDDfoU7y6/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoint-response:
+    get:
+      summary: Retrieve endpoint response history 
+      description: |
+        This function will retrieve the activity history for an endpoint specified by its ID, or a retrieve a single history record specified by the endpoint-response ID. 
+        
+        
+        Returned history includes user input, model output, response latency, and other infromation. If applicable to the specified endpoint, data source context and insturctions are also included. 
+        
+        **Note:** Only one of the below parameters is required. `id` refers to an endpoint-respose ID. There is no usage of this within Orchestrator's UI currently. 
+      tags: 
+        - Endpoints
+      operationId: getEndpointResponses
+      parameters:
+      - name: endpointId 
+        description: Unique ID of an endpoint.
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: "e5e3bfc0-87e6-11e9-8e59-3c15c2f4a6f7"
+      - name: id
+        description: Unique ID of an individual endpoint response.
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "200":
+          description: Successfully retrieved response(s).
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/EndpointResponses'
+        "400":
+          description: Invalid request. ID of EndpointResponse or Endpoint required.
+        "404":
+          description: Respone(s) for provided Endpoint ID or Endpoint-Response ID not found. 
+        "500":
+          description: Internal server error. Endpoint response(s) not retrieved. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetEndpointResponseFunctio-XugPv8fpg1qW/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoint/metrics:
+    get:
+      summary: Retrieve basic metrics of an endpoint
+      description: Specify a target endpoint, and retrieve overall metrics for it. See the response schema below for details. 
+      tags: 
+        - Endpoints
+      operationId: getEndpointMetrics
+      parameters:
+      - name: id
+        description: Unique ID value of endpoint
+        example: 1
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successfully retreieved metrics. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointMetrics'
+        "500": 
+          description: Internal server errror. Metrics not retreived. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetEndpointMetricsFunction-Vs5SDlaP9GG7/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /endpoint/graph-view-metrics:
+    get:
+      summary: Retrieve metrics uses in graph view 
+      description: | 
+        **[Under development]** Retrieves the metrics needed to populate the various graphs contained within the Endpoints or Workflows metrics tab.
+      tags: 
+        - Endpoints
+      operationId: getGraphViewMetrics
+      parameters:
+      - name: id
+        description: Unique ID value of endpoint
+        example: 1
+        in: query
+        required: true
+        schema:
+          type: string        
+      responses:
+        "200":
+          description: Successfully retreived graph metrics data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsGraphData'
+        "500":  
+          description: Interal server error.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetGraphViewMetricsFunctio-4ZkD77rlNrPE/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+
+  # WORKFLOWS
+  # ---------
+
+  /workflows:
+    get:
+      summary: Retreieve all workflows
+      description: Retrieve list of all workflows. Only includes ID, name, and timestamps.
+      tags: 
+        - Workflows
+      operationId: getWorkflows
+      responses:
+        "200":
+          description: Succesfully retireved list of all workflows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflows'
+        "500":
+          description: Internal server error. Unable to retreive list of workflows.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllWorkflowsFunction-cdS6cWvzHIMk/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/create:
+    post:
+      summary: Create a new Workflow
+      description: Specifiy a name for a new workflow, and create a new entry in the PostgreSQL database for it. 
+      tags: 
+        - Workflows
+      operationId: createWorkflow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workflowName:
+                  type: string
+                  description: Unique name of the workflow.
+                  example: "ExampleWorkflow"
+              required:
+                - workflowName
+      responses:
+        "200":
+          description: Succesfully created workflow. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        "500":
+          description: Internal server error. Workflow not created.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-CreateWorkflowsFunction-7dTVu4ymJoTy/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow:
+    delete:
+      summary: Delete a workflow
+      description: |
+        Specifiy the target workflow ID, and delete it out of the PostgreSQL database.
+      tags: 
+        - Workflows
+      operationId: deleteWorkflow
+      parameters:
+      - name: id 
+        description: Unique ID of a Workflow.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200": 
+          description: Workflow deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        "404":
+          description: Invalid request. Provided workflow ID not found.
+        "500":
+          description: Internal server error. Workflow not deleted.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-DeleteWorkflowsFunction-3Ytviocg7H6I/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/invoke:
+    post:
+      summary: Run a workflow's invocation pipeline
+      description: |
+        In Orhcestrator's UI, invoke a workflow's pipeline by either using the **Test** button, or the **Invoke** tab.
+      tags: 
+        - Workflows
+      operationId: invokeWorkflow
+      requestBody:
+        description: |
+          The backend function is setup to accept two different types of inovcation requests. 
+          
+          **1. Invoke Tab - Send Test Request:** The Workflow ID must be provided, and the backend will automatically retrieve the `node` and `edge` items. 
+        
+          **2. Test Button - Workflow Visualizer:** API call requires all of the workflow's `node` and `edge` item objects to be passed directly from the UI. This is due to the fact that a Test can be ran before the workflow configuration is saved.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeWorkflowRequest'
+      responses:
+        "200":
+          description: |
+            Succesfully invoked workflow pipeline. 
+            
+            **Returned:** 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/'
+        "400": 
+          description: Invalid request. 
+        "500":
+          description: Internal server error.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-InvokeStaticWorkflowFuncti-DeQif2D35vso/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/items:
+    get:
+      summary: Retrieve a workflow's configuration
+      description: |
+        For a specified Workflow, retireve all data pretaining to the configuration of its nodes and connections (edge items).
+        
+        This includes information such as what type each node is, UUIDs used for connections, and positional coordinates for the workflow visualizer. See the response schema below for more details. 
+      tags: 
+        - Workflows
+      operationId: getWorkflowItems
+      parameters:
+      - name: id 
+        description: Unique ID of a Workflow.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200": 
+          description: Successfully retreieved all workflow items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowItems'
+        "500": 
+          description: Internal server error. Workflow items not retreived. 
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetWorkflowItemsFunction-lNbBE3nKfsBJ/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/updateItems:
+    post:
+      summary: Save and update workflow configuration 
+      description: |
+        Save the configuration of a workflow - overwrites previous configuration when the **Save Change** button is used.
+      tags: 
+        - Workflows
+      operationId: updateWorkflowItems
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowUpdateItemsRequest'
+      responses:
+        "200":  
+          description: Succesfully saved updates to workflow.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        "500": 
+          description: Internal server error. Workflow not updated.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-UpdateWorkflowItemsFunctio-O952EkAZFWJx/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/create-node:
+    post:
+      summary: Create a new workflow node
+      description: Specifiy a predefined type and sub-type of node you wish to create. Specify properties specific to the type, and have the node saved to the PostgreSQL database.
+      tags: 
+        - Workflows
+      operationId: createWorkflowNode
+      requestBody:
+        description: |
+          To create a new node, data outlined in the below schema is required to be sent in the request.
+          
+          `nodeInfo` can take on any structure. The schema includes examples of how it is currently defined within Orchestrator's frontend code. 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeCreate'  
+      responses:
+        "200":
+          description: |
+            Successfully created new workflow node. 
+            
+            **Returned data:** Node configruation, retreived directly from the new database entry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeCreateResponse'
+        "500":
+          description: Internal server error. Node not created.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-CreateWorkflowNodeFunction-JCyqQ1quVYHv/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/Activity:
+    get:
+      summary: Retrieve workflow response history
+      description: |
+        This function will retrieve the activity history for a workflow specified by its ID.
+
+        Returned history includes user input, model output, response latency, and other infromation. If applicable to the specified endpoint, data source context and insturctions are also included.
+      tags: 
+        - Workflows
+      operationId: 
+      parameters:
+      - name: workflowID
+        description: Unique ID value of Workflow.
+        example: "b5e6a671-3a5f-41b-872d-fc8f63d3ef57"
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Succesfully retireved activity history of workflow.
+          content:
+            application/json:
+              schema:
+               $ref: '#/components/schemas/EndpointResponses'
+        "400":
+          description: Invalid request. Provided WorkflowID not found. 
+        "404":
+          description: No records of activity found from `endpoint_responses` database table.
+        "500":
+          description: Internal server error. Workflow activity not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetWorkflowActivityFunctio-Bv6pV6ocTZER/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/workflow-graph-metrics:
+    get:
+      summary: Retreive workflow metrics for graphs.
+      description: |
+        Specifiy a workflow by ID, and retrieve a collection of metrics data for several timeframes.
+        
+        In Orhcestrator's UI, this is used to populate the graphs in the Metrics tab. 
+      tags: 
+        - Workflows
+      parameters:
+      - name: workflowID
+        description: Unique ID value of Workflow.
+        example: "b5e6a671-3a5f-41b-872d-fc8f63d3ef57"
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: |
+            Succesfully retreived workflow metrics.
+            
+            
+            **Returned:** An object of nested arrays containing metrics data. See the below schema for more details. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowGraphMetrics'
+        "500":
+          description: Internal server error. Workflow metrics not retreived.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetWorkflowGraphMetricsFun-4xR8ocOvsDjm/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/condition:
+    get:
+      summary: Retrieve a specific Condition node
+      description: Specifiy a condtion node by ID, and retreive it's configuration.
+      tags: 
+        - Workflows
+      operationId: getWorkflowConditionNode
+      parameters:
+      - name: id 
+        description: Unique ID of a condition node.
+        in: query
+        required: true
+        schema:
+          type: string
+          format: UUID   
+      responses:
+        "200":
+          description: Succesfully retreived condition node.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique ID of the condition node.
+                - $ref: '#/components/schemas/NodeInfo_Condition'
+                required:
+                  - id
+        "404":
+          description: Invalid request. Condition node ID not found.
+        "500":
+          description: Internal server error. Condition node not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetConditionFunction-CbX6qLsY7wzh/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/conditions:
+    get:
+      summary: Retrieve all Condition nodes
+      description: Retreive a list of all configured condition nodes.
+      tags: 
+        - Workflows
+      operationId: getWorkflowConditionNodes
+      responses:
+        "200":
+          description: |
+            Succesfully retireved all condition nodes.
+            
+            **Returns:** All records from `conditions` table in PostgreSQL database.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of all condition nodes.
+                items:
+                  allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique ID of the condition node.
+                  - $ref: '#/components/schemas/NodeInfo_Condition'
+                  required:
+                    - id
+        "500":
+          description: Internal server error. Condition nodes not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllConditionFunction-tLv7yxOYQ6bz/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  
+  /workflow/retriever:
+    get:
+      summary: Retrieve a specific Retriever node
+      description: Specify a retriever node by ID, and retrieve its configuration.
+      tags: 
+        - Workflows
+      operationId: getWorkflowRetrieverNode
+      parameters:
+        - name: id 
+          description: Unique ID of a retriever node.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully retrieved retriever node.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique ID of the retriever node.
+                  - $ref: '#/components/schemas/NodeInfo_Retriever'
+                required:
+                  - id
+        "404":
+          description: Invalid request. Retriever node ID not found.
+        "500":
+          description: Internal server error. Retriever node not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetRetrieverFunction-dPmJI7vCMqGT/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/retrievers:
+    get:
+      summary: Retrieve all Retriever nodes
+      description: Retrieve a list of all configured retriever nodes.
+      tags: 
+        - Workflows
+      operationId: getWorkflowRetrieverNodes
+      responses:
+        "200":
+          description: |
+            Successfully retrieved all retriever nodes.
+            
+            **Returns:** All records from `retrievers` table in PostgreSQL database.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of all retriever nodes.
+                items:
+                  allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Unique ID of the retriever node.
+                    - $ref: '#/components/schemas/NodeInfo_Retriever'
+                  required:
+                    - id
+        "500":
+          description: Internal server error. Retriever nodes not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllRetrieverFunction-Et4oUrUkCM8t/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/transformer:
+    get:
+      summary: Retrieve a specific Transformer node
+      description: Specify a transformer node by ID, and retrieve its configuration.
+      tags: 
+        - Workflows
+      operationId: getWorkflowTransformerNode
+      parameters:
+        - name: id 
+          description: Unique ID of a transformer node.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: UUID   
+      responses:
+        "200":
+          description: Successfully retrieved transformer node.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique ID of the transformer node.
+                  - $ref: '#/components/schemas/NodeInfo_Transformer'
+                required:
+                  - id
+        "404":
+          description: Invalid request. Transformer node ID not found.
+        "500":
+          description: Internal server error. Transformer node not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetTransformerFunction-ORAMc7RHkQVc/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/transformers:
+    get:
+      summary: Retrieve all Transformer nodes
+      description: Retrieve a list of all configured transformer nodes.
+      tags: 
+        - Workflows
+      operationId: getWorkflowTransformerNodes
+      responses:
+        "200":
+          description: |
+            Successfully retrieved all transformer nodes.
+            
+            **Returns:** All records from `transformers` table in PostgreSQL database.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of all transformer nodes.
+                items:
+                  allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Unique ID of the transformer node.
+                    - $ref: '#/components/schemas/NodeInfo_Transformer'
+                  required:
+                    - id
+        "500":
+          description: Internal server error. Transformer nodes not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllTransformerFunction-mWnWGNUg5sBT/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/query:
+    get:
+      summary: Retrieve a specific Query node
+      description: Specify a query node by ID, and retrieve its configuration.
+      tags: 
+        - Workflows
+      operationId: getWorkflowQueryNode
+      parameters:
+        - name: id 
+          description: Unique ID of a query node.
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successfully retrieved query node.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Unique ID of the query node.
+                        example: "7a1f3e8-2a41-4a9b-bb71-2d55f5f8c6c1"
+                  - $ref: '#/components/schemas/NodeInfo_Query'
+                required:
+                  - id
+        "404":
+          description: Invalid request. Query node ID not found.
+        "500":
+          description: Internal server error. Query node not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetQueryFunction-vtgl9AKlg72f/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+  /workflow/queries:
+    get:
+      summary: Retrieve all Query nodes
+      description: Retrieve a list of all configured query nodes.
+      tags: 
+        - Workflows
+      operationId: getWorkflowQueryNodes
+      responses:
+        "200":
+          description: |
+            Successfully retrieved all query nodes.
+            
+            **Returns:** All records from `queries` table in PostgreSQL database.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: List of all query nodes.
+                items:
+                  allOf:
+                    - type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Unique ID of the query node.
+                          example: "7a1f3e85-2a41-4a9b-bb71-2d55f5f8c6c1"
+                    - $ref: '#/components/schemas/NodeInfo_Query'
+                  required:
+                    - id
+        "500":
+          description: Internal server error. Query nodes not retrieved.
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ca-central-1:lambda:path/2015-03-31/functions/arn:aws:lambda:ca-central-1:960138600391:function:kronos-orchestrator-dev-GetAllQueryunction-qrEgIb8wbvNQ/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
+      tags: 
+        - Options
+      responses:
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Max-Age:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Max-Age: "'600'"
+              method.response.header.Access-Control-Allow-Methods: "'POST, GET, PATCH,\
+                \ DELETE, OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+
+
+# SCHEMAS
+# -------
+
+components:        
+  schemas:
+
+    # Data Source
+    DataSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique ID of Data Source
+        type:
+          type: string
+          enum:
+            - "KENDRA"
+            - "KRONOS"
+          description: Type of data source
+          example: "KRONOS"
+        index_name:
+          type: string
+          description: Unique name of Data Source
+          example: "ExampleDataSource"
+      required:
+        - id
+        - type
+        - index_name
+    
+    # Data Source - Used to add Endpoint Count to DataSources schema below
+    DataSourceExtendedWithEndpointCount:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/DataSource'
+        - type: object
+          properties:
+            endpoints:
+              type: integer
+              format: int32
+              description: \# of associated endpoints.
+              example: 3
+        
+    DataSources:
+      type: object
+      properties:
+        contextSources:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceExtendedWithEndpointCount'
+    
+    # Data Source Metrics
+    DataSourceMetrics:
+        type: object
+        properties:
+          index_status:
+            type: string
+            enum:
+              - "ACTIVE"
+            description: The status of the index.
+          document_count:
+            type: number
+            format: integer
+            description: /# of context chunks within the data source.
+            example: 101
+          bytes:
+            type: number
+            format: integer
+            description: The total size Data Source content, in Bytes.
+            example: 256000000
+          attached_endpoints:
+            type: number
+            format: integer
+            description: The \# of endpoints attached to the data source.
+            example: 3
+        required:
+          - index_status
+          - document_count
+          - bytes
+          - attached_endpoints
+    
+    # Data Source - Info on files / websites it contains    
+    DataSourceMetadata:
+      type: object
+      properties:
+        file:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileData'
+        website:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebsiteData'
+        total_files:
+          type: integer
+          format: int32
+          description: Total \# of uploaded files in data source.
+          example: 10
+        total_website:
+          type: integer
+          format: int32
+          description: Total \# of scraped websites in data source.
+          example: 10
+    FileData:
+      type: object
+      properties:
+        file_name:
+          type: string
+          example: MPAC_IT_Policy.pdf
+        file_type:
+          type: string
+          enum:
+              - "application/pdf"
+              - "application/json"
+          description: Type of file (must be supported).
+        file_size:
+          type: integer
+          format: int64
+          description: File size in Bytes.
+          example: 256000
+        upload_status:
+          type: string
+          enum:
+            - "COMPLETE"
+            - "PROCESSING"
+            - "ERROR"
+          description: Upload status of file to data source.
+        created_at:
+          type: string
+          format: date-time
+          description: Time of file upload completion.
+          example: "2024-04-04 16:28:11.946 -0400"
+    WebsiteData:
+      type: object
+      properties:
+        website_url:
+          type: string
+          format: uri
+          description: Starting URL for scraping job.
+          example: "www.mpac.ca"
+        total_valid_url:
+          type: integer
+          description: /# of URLs scraped during job.
+          example: 1
+        total_chunks:
+          type: integer
+          description: /# of chunked text pieces from job.
+          example: 3
+        upload_status:
+          type: string
+          enum:
+            - "COMPLETE"
+            - "PROCESSING"
+            - "ERROR"
+          descrpition: Upload status of file to data source.
+        created_at:
+          type: string
+          format: date-time
+          description: Time of file upload completion.
+          example: "2024-04-04 16:28:11.946 -0400"
+    
+    # Data Source - File Upload Schemas
+    DataSourceUploadFileContent:
+      type: object
+      properties:
+        filename:
+          type: string
+          description: Name of the file
+          example: "document1.pdf"
+        base64String:
+          type: string
+          description: Base64 encoded content of the file
+          example: "JVBERi0xLjQKJ... (base64 encoding string continues)"
+      required:
+        - filename
+        - base64String
+    DataSourceUploadFiles:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceUploadFileContent'
+          description: An array of files with their base64 encoded contents
+        id:
+          type: string
+          format: uuid
+          description: Unique ID of target Data Source
+        index_name:
+          type: string
+          description: Name of taget Data Source
+          example: "DataSourceExample"
+      required:
+        - files
+        - id
+        - index_name
+          
+    # Data Source - Information needed to request upload statues 
+    DataSourceUploadStatusRequest:
+      description: An array of objects that contain either fileName & dataSourceId, or startUrl & dataSourceId  
+      type: array
+      items:
+        oneOf:
+          - type: object
+            properties:
+              fileName:
+                type: string
+                description: The name of the file.
+                example: "MPAC_IT_Policy.pdf"
+              dataSourceId:
+                type: string
+                format: uuid
+                description: Unique ID of Data Source.
+            required:
+              - fileName
+              - dataSourceId
+          - type: object
+            properties:
+              startUrl:
+                type: string
+                format: uri
+                description: The URL where the file is hosted or started from.
+                example: "https://www.mpac.ca"
+              dataSourceId:
+                type: string
+                format: uuid
+                description: Unique ID of Data Source.
+            required:
+              - startUrl
+              - dataSourceId
+    
+    # Data Source - Content Upload Status
+    DataSourceUploadStatus:
+      type: array
+      items:
+        type: object
+        properties:
+          fileName:
+            type: string
+            description: The name of the file.
+            example: "MPAC_IT_Policy.pdf"
+          startUrl:
+            type: string
+            format: uri
+            description: The URL where the file is hosted or started from.
+            example: null
+          status:
+            type: string
+            enum: 
+              - "COMPLETE"
+              - "PROCESSING"
+              - "ERROR"
+            description: Upload status of the file or URL.
+        required:
+          - fileName
+          - startUrl
+          - status
+      description: An array status objects for the upload content.
+
+    # Endpoints
+    EndpointCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Example Endpoint"
+        model:
+          type: string
+          enum:
+            - bedrock_claude_v2
+            - bedrock_claude_v1_instant
+            - bedrock_claude_v3_haiku
+          example: "bedrock_claude_v3_haiku"
+        instruction:
+          type: string
+          example: "This is an example instruction."
+        streaming:
+          type: boolean
+          example: false
+        max_tokens:
+          type: integer
+          example: 128
+        temperature:
+          type: number
+          format: float
+          example: 0.5
+        top_k:
+          type: integer
+          example: 50
+        top_p:
+          type: number
+          format: float
+          example: 1.0
+        context_source_id:
+          type: string
+          format: uuid
+          example: "9a6595d3-fd33-403e-9d30-826d3222d7f4"
+      required:
+        - name
+        - model
+        - instruction
+        - streaming
+        - max_tokens
+        - temperature
+        - top_k
+        - top_p
+        - context_source_id
+        
+    Endpoint:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/EndpointCreate'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            created_at:
+              type: string
+              format: date-time
+              example: "2024-08-12T00:00:00.000Z"
+            updated_at:
+              type: string
+              format: date-time
+              example: "2024-08-12T00:00:00.000Z"
+          required:
+            - id
+            - created_at
+            - updated_at
+
+    EndpointResponses:
+      type: array
+      items:
+        $ref: '#/components/schemas/EndpointResponse' 
+
+    EndpointResponse:
+      allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique ID of the response record.
+          messages:
+            type: array
+            items:
+              type: string
+              example: "Human: First message"  # Example for an array item
+            description: Array of messages to be sent to the endpoint. Include initial input message, and any other inputs and responses that have occured within the same session. 
+            example: 
+              - "Human: First message"
+              - "Assistant: First response"
+              - "Human: Second message"
+          context:
+            type: string
+            description: Context from the data source.
+            example: "Context from data source"
+          instruction:
+            type: string
+            description: Instruction given to the AI.
+            example: "Repeat the human's message."
+          response:
+            type: string
+            description: AI's response to the instruction.
+            example: "Assistant: Second message."
+          latency:
+            type: number
+            format: float
+            description: Latency in milliseconds for the endpoint response.
+            example: 9.507999897003174
+          quality_score:
+            type: number
+            format: float
+            description: Quality score of the endpoint response.
+            example: 1  
+          flagged:
+            type: boolean
+            description: Whether the response is flagged.
+            example: false
+          endpoint_id:
+            type: number
+            description: Unique ID of associated endpoint (not UUID).
+            example: 4
+          workflow_id:
+            type: string
+            format: uuid
+            description: Unique ID of associated workflow.
+            example: "0292706c-56d0-4166-b89e-f0fc0ab35dac"
+          workflow_item_id:
+            type: string
+            format: uuid
+            description: Unique ID of associated workflow.
+            example: null
+          result:
+            type: boolean
+            description: Successful result flag.
+            example: true
+          invoke_id:  
+            type: string
+            format: uuid
+            description: Unique ID of the associated workflow invocation.
+            example: "fa2c3828-586a-41eb-8e3b-0242ac130003"
+      - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - result
+        - messages
+        - context
+        - instruction
+        - response
+        - quality_score
+        - latency
+        - flagged
+        - workflow_id
+        - created_at
+        - updated_at
+    
+            
+    EndpointInvokeRequest:
+      type: object
+      properties:
+        endpointId:
+          type: string
+          description: The ID of the endpoint to invoke.
+          example: "1"  # Example for a generic string ID
+          # If the endpointId is a UUID, use format: uuid instead of example
+          # format: uuid
+        messages:
+          type: array
+          items:
+            type: string
+            example: "Human: First message"  # Example for an array item
+          description: Array of messages to be sent to the endpoint. Include initial input message, and any other inputs and responses that have occured within the same session. 
+          example: 
+            - "Human: First message"
+            - "Assistant: First response"
+            - "Human: Second message"
+      required:
+        - endpointId
+        - messages 
+
+    EndpointMetrics:
+      type: object
+      properties:
+        responseCount:
+          type: number
+          format: integer
+          description: Total \# of endpoint_response entries in database (acitivty rows).
+          example: 100
+        averageQuality:
+          type: number
+          format: float
+          example: 1
+          description: Endpoint's average quality score (x/10).
+        averageLatency:
+          type: number
+          format: float
+          example: 2.937999963760376
+          description: Endpoint's average invocation latency.
+        averageMessageCount:
+          type: number
+          format: float
+          example: 1.5
+          description: Currently useless. Total number of 'messages' array elements for all of an endpoint's endpoint_response entries
+      required:
+        - responseCount
+        - averageQuality
+        - averageLatency
+        - averageMessageCount
+        
+    MetricProperties:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/EndpointMetrics'  # Inherit properties from EndpointMetrics
+        - type: object
+          properties:
+            percentFlagged:
+              type: number
+              format: float
+              example: 10
+              description: The percentage of flagged responses in the time frame.
+          required:
+            - percentFlagged
+    TimeFrameMetrics: # Part of GraphMetricsData
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricProperties'
+          description: Array of metric values for the time frame.
+        axisLabels:
+          type: array
+          items:
+            type: string
+          description: Date/time labels for the graph axis.
+      required:
+        - metrics
+        - axisLabels
+    MetricsGraphData: 
+      type: object
+      properties:
+        lastHour:
+          allOf:
+            - $ref: '#/components/schemas/TimeFrameMetrics'
+          description: Metrics data for the last hour.
+        lastDay:
+          allOf:
+            - $ref: '#/components/schemas/TimeFrameMetrics'
+          description: Metrics data for the last day.
+        lastWeek:
+          allOf:
+            - $ref: '#/components/schemas/TimeFrameMetrics'
+          description: Metrics data for the last week.
+        lastMonth:
+          allOf:
+            - $ref: '#/components/schemas/TimeFrameMetrics'
+          description: Metrics data for the last month.
+      required:
+        - lastHour
+        - lastDay
+        - lastWeek
+        - lastMonth
+        
+    # Web Scraping
+    ScrapeRequest:
+        type: object
+        properties:
+          scrapeUrlList:
+            type: array
+            items:
+              type: string
+              format: uri
+            description: A list of URLs to scrape.
+            example:
+              - "https://www.example.com"
+              - "https://www.example2.com"
+              - "https://www.example3.com/Example"
+          data_source_id:
+            type: string
+            format: uuid
+            description: Unique ID of the target data source.
+            example: "12345"
+          class_name:
+            type: string
+            description: The name of the Data Source.
+            example: "ExampleDataSource"
+        required:
+          - scrapeUrlList
+          - data_source_id
+          - class_name
+    
+    
+    # WORKFLOWS
+    
+    Workflow:
+      type: object
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Unique ID of Workflow.
+            name:
+              type: string
+              description: Unique name of the Workflow.
+              example: 'ExampleWorkflow'
+        - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+        
+    Workflows:
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/Workflow'
+        
+        
+    #Workflow Items
+        
+    WorkflowItems:
+      type: object
+      properties:
+        workflowEdges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdgeItem'
+          description: All edge items of target Workflow.    
+        workflowNodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNodeItem'
+          description: All nodes of target Workflow.
+      required:
+        - workflowEdges
+        - workflowNodes  
+    
+    # Workflow/UpdateItems - Request Body    
+    WorkflowUpdateItemsRequest:
+      type: object
+      properties:
+        workflowID:
+          type: string
+          format: uuid
+          description: Unique ID of target workflow.
+          example: "54f0528e-3857-416e-b2a5-c8b59a451655"
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNodeItem'
+          description: All nodes of target Workflow.
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdgeItem'
+          description: All edge items of target Workflow.    
+      required:
+        - edges
+        - nodes    
+        
+    WorkflowEdgeItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique ID of workflow edge item, but with a fixed prefix.
+          example: "edge-3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        workflowId:
+          type: string
+          format: uuid
+          description: ID of specified target Workflow.
+          example: "94f85f64-5717-4567-b3fd-2c9639e9afa6"
+        source:
+          type: string
+          format: uuid
+          description: ID of the source node
+        sourceHandle:
+          type: string
+          description: ??? # No clue. Boolean, but can also be "b" ???
+        target:
+          type: string
+          format: uuid
+          description: ID of the connected target node.
+        animated:
+          type: boolean
+          description: Indicates if the edge is animated.
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the edge item was created. #Verify timestamps included
+          example: "2024-08-12T00:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the edge item was last updated.
+          example: "2024-08-13T00:00:00.000Z"
+      required:
+        - id
+        - workflowId
+        - source
+        - sourceHandle
+        - target
+        - animated
+        - created_at
+        - updated_at    
+        
+    WorkflowNodeItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique ID of the workflow node.
+        workflowId:
+          type: string
+          format: uuid
+          description: ID of specified target Workflow.
+          example: "94f85f64-5717-4567-b3fd-2c9639e9afa6"
+        type:
+          type: string
+          enum: # Confirmed values for Workflows/UpdateItems request
+            - endpointNode
+            - transformerNode
+            - conditionNode
+            - retrieverNode 
+          description: Type of the workflow node.
+          example: endpointNode
+        position:
+          type: object
+          description: (X,Y) Position of the node in the workflow visualizer.
+          properties:
+            x:
+              type: number
+              format: float
+              description: X coordinate.
+              example: 800.7237729911913
+            y:
+              type: number
+              format: float
+              description: Y coordinate.
+              example: -51.669285484474216
+        data:
+          $ref: '#/components/schemas/WorkflowNodeItemData'
+        width:
+          type: integer
+          description: Width of node in workflow visualizer.
+          example: 240
+        height:
+          type: integer
+          description: Height of node in workflow visualizer.
+          example: 200
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the node was created.
+          example: "2024-08-12T00:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the node was last updated.
+          example: "2024-08-13T00:00:00.000Z"
+      required:
+        - id
+        - workflowId
+        - type
+        - position
+        - data
+        - width
+        - height
+        - created_at
+        - updated_at
+    WorkflowNodeItemData:
+      type: object
+      description: "Contains the node ID, configruation, and various flags. This is an example of an EndpointNode. Other nodes will have different data."
+      oneOf:
+        - required: 
+            - endpointId
+          properties:
+            endpointId:
+              type: integer | string
+              description: "Identifier of Endpoint (not UUID)."
+              example: "3"
+        - required:
+            - transformerId
+          properties:
+            transformerId:
+              type: string
+              format: uuid
+              description: "Identifier for the transformer."
+              example: "b8a5f6e4-3b8a-42d4-8a22-9d96c7b9265a"
+        - required:
+            - retrieverId
+          properties:
+            retrieverId:
+              type: string
+              format: uuid
+              description: "Identifier for the retriever."
+              example: "c5b2d58e-32a2-48b8-b7a8-bfd3c621ac2d"
+        - required:
+            - conditionId
+          properties:
+            conditionId:
+              type: string
+              format: uuid
+              description: "Identifier for the condition."
+              example: "d9f6a9f3-9d3a-4c9a-8c56-8b5a7b7eae32"
+        - required:
+            - queryId
+          properties:
+            queryId:
+              type: string
+              format: uuid
+              description: "Identifier for the query."
+              example: "e8d6b6f1-1d2c-4a29-86fc-72b8e7d34a3d"
+      properties:
+        endpointStreaming:
+          type: boolean
+          description: "Flag indicating if the endpoint is streaming."
+          example: true
+        hideHandles:
+          type: boolean
+          description: "Flag to determine if handles should be hidden."
+          example: false
+        testFlag:
+          type: boolean
+          description: "Flag used to toggle NodeTestResult."
+          example: false
+        testSuccessFlag:
+          type: boolean
+          description: "Flag indicating if the test was successful."
+          example: true
+        inputValue:
+          type: string
+          description: "Initialzied input value for the node."
+          example: ""
+        outputValue:
+          type: string
+          description: "Initialzied output value for the node."
+          example: ""
+
+    # Workflows - Create Node
+    NodeCreate:
+      type: object
+      properties:
+        nodeType:
+          type: string
+          enum:
+            - endpointNode
+            - transformerNode
+            - conditionNode
+            - retrieverNode
+            - queryNode
+          description: The Node's selected type.
+        nodeInfo:
+          type: object
+          description: Information specific to the node type.
+          oneOf:
+            - $ref: '#/components/schemas/NodeInfo_Transformer'
+            - $ref: '#/components/schemas/NodeInfo_Condition'
+            - $ref: '#/components/schemas/NodeInfo_Retriever'
+            - $ref: '#/components/schemas/NodeInfo_Query'
+
+    NodeInfo_Transformer:
+      type: object
+      description: Transformer node.
+      properties:
+        type:
+          type: string
+          enum:
+            - EXTRACT
+            - TRIM
+            - SUB
+            - CONVERT
+            - ENCRYPT
+            - DECRYPT
+            - SANITIZE
+            - VALIDATE
+            - NORMALIZE
+            - AGGREGATE
+            - FORMAT
+            - PARSE
+            - MASK
+            - TOKENIZE
+            - HASH
+          description: The type of transformer.
+          example: EXTRACT
+        extractionTag:
+          type: string
+          description: The extraction tag to specify transform target.
+          example: "answer"
+      required:
+        - type
+        - extractionTag
+    NodeInfo_Condition:
+      type: object
+      description: Condition node.
+      properties:
+        type:
+          type: string
+          enum:
+          - EQUAL
+          - HAS_JSON_PROPERTY
+          - NOT_EQUAL
+          - GREATER_THAN
+          - LESS_THAN
+          - GREATER_THAN_OR_EQUAL
+          - LESS_THAN_OR_EQUAL
+          - LIKE
+          - NOT_LIKE
+          - IN
+          - NOT_IN
+          - BETWEEN
+          - NOT_BETWEEN
+          - IS_NULL
+          - IS_NOT_NULL
+          description: The type of condition.
+          example: EQUAL
+        value:
+          type: string # Specified as string in source code, but current values are boolean.
+          description: Condition value.
+          example: true
+      required:
+        - type
+        - value
+    NodeInfo_Retriever:
+      type: object
+      description: Retriever node.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The target URL.
+          example: "https://api.example.com/time?{timezone}=EST"
+        placeholders:
+          type: array
+          items:
+            type: string
+          description: Placeholder variables for the request.
+          example: "timezone"
+      required:
+        - url
+    NodeInfo_Query:
+      type: object
+      description: Query node.
+      properties:
+        type:
+          type: string
+          enum:
+            - WEAVIATE_GRAPHQL
+            - SQL
+            - JSON
+          description: The type of query.
+          exmaple: WEAVIATE_GRAPHQL
+        count:
+          type: integer
+          description: \# of query items to return.
+          example: 3
+        context_source_id:
+          type: string
+          format: uuid
+          description: The context source ID for the query.
+          example: "4c3e8d37-5d0c-42b8-935b-f8d02bfcfa1f"
+      required:
+        - type
+        - count
+        - context_source_id
+
+          
+    # Workflows - Create Node Response
+    NodeCreateResponse:
+      description: Data returned depends on the node type.
+      oneOf:
+        - $ref: '#/components/schemas/NodeCreateResponse_Transformer'
+        - $ref: '#/components/schemas/NodeCreateResponse_Condition'
+        - $ref: '#/components/schemas/NodeCreateResponse_Retriever'
+        - $ref: '#/components/schemas/NodeCreateResponse_Query'
+          
+    NodeCreateResponse_Transformer:
+      type: object
+      description: Transformer node
+      allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique ID of node.
+            example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - $ref: '#/components/schemas/NodeInfo_Transformer'
+      - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - type
+        - extractionTag
+        - create_at
+        - updated_at      
+    NodeCreateResponse_Condition:
+      type: object
+      description: Condition node    
+      allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique ID of node.
+            example: "4fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - $ref: '#/components/schemas/NodeInfo_Condition'
+      - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - type
+        - value
+        - create_at
+        - updated_at      
+    NodeCreateResponse_Retriever:
+      type: object
+      description: Retriever node
+      allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique ID of node.
+            example: "5fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - $ref: '#/components/schemas/NodeInfo_Retriever'
+      - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - url
+        - placeholders
+        - create_at
+        - updated_at
+    NodeCreateResponse_Query:
+      type: object
+      description: Query node
+      allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Unique ID of node.
+            example: "6fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - $ref: '#/components/schemas/NodeInfo_Query'
+      - $ref: '#/components/schemas/Timestamps'
+      required:
+        - id
+        - type
+        - count
+        - context_source_id
+        - create_at
+        - updated_at
+    
+    # Workflow Graph Metrics
+    WorkflowGraphMetrics:
+      type: object
+      description: |
+        Each timeframe contains arrays with metric data:
+        
+          - Average quality score
+          - Average message count
+          - Average response latency
+          - Percentage of flagged responses
+          - Time/date axis labels for the graphs
+          
+          The # of elements in each of the above arrays matches the # of elements in the time/date axis labels array.
+          
+      properties:
+        lastHour:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              description: Metric data for the last hour.
+          description: Metrics data for the last hour.
+          example: [
+            ["85.50", "86.00", "85.75"],  # averageQuality
+            ["4.25", "4.50", "4.75"],      # averageMessageCount
+            ["120.75", "115.50", "130.25"], # averageLatency
+            ["15.00", "10.00", "20.00"],   # percentFlagged
+            ["10:00 AM", "10:20 AM", "10:40 AM"] # axisLabels
+          ]
+        lastDay:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              description: Metric data for the last day.
+          description: Metrics data for the last day.
+          example: [
+            ["85.50", "86.00", "84.75", "85.25", "86.50", "87.00"],  # averageQuality
+            ["4.25", "4.50", "4.00", "4.75", "4.25", "4.50"],      # averageMessageCount
+            ["120.75", "115.50", "130.25", "125.00", "118.75", "122.50"], # averageLatency
+            ["15.00", "20.00", "10.00", "12.50", "17.00", "13.00"],   # percentFlagged
+            ["12:00 AM", "4:00 AM", "8:00 AM", "12:00 PM", "4:00 PM", "8:00 PM"] # axisLabels
+          ]
+        lastWeek:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              description: Metric data for the last week.
+          description: Metrics data for the last week.
+          example: [
+            ["85.50", "86.00", "84.75", "85.25", "87.00", "86.50", "85.75"],  # averageQuality
+            ["4.25", "4.50", "4.00", "4.75", "4.50", "4.25", "4.00"],      # averageMessageCount
+            ["120.75", "115.50", "130.25", "125.00", "118.75", "122.50", "130.00"], # averageLatency
+            ["15.00", "20.00", "10.00", "12.50", "17.00", "13.00", "14.00"],   # percentFlagged
+            ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] # axisLabels
+          ]
+        lastMonth:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+              description: Metric data for the last month.
+          description: Metrics data for the last month.
+          example: [
+            ["85.50", "86.00", "84.75", "85.25"],  # averageQuality
+            ["4.25", "4.50", "4.00", "4.75"],      # averageMessageCount
+            ["120.75", "115.50", "130.25", "125.00"], # averageLatency
+            ["15.00", "20.00", "10.00", "12.50"],   # percentFlagged
+            ["August", "September", "October", "November"] # axisLabels
+          ]
+      required:
+        - lastHour
+        - lastDay
+        - lastWeek
+        - lastMonth
+    
+    
+    # Workflow Invocation
+    InvokeWorkflowRequest:
+      oneOf:
+        - $ref: '#/components/schemas/InvokeWorkflowRequest_InvokeTab'
+        - $ref: '#/components/schemas/InvokeWorkflowRequest_Test'
+    
+    InvokeWorkflowRequest_InvokeTab:
+      type: object
+      description: "1. Invoke Tab"
+      properties:
+        invokeId:
+          type: string
+          format: uuid
+          description: Unique ID of invoke request.
+          example: "0ef7f06b-dd7d-41de-9acc-f699ea6d2079"
+        workflowId:
+          type: string
+          format: uuid
+          description: Unique ID of invoke request.
+          example: "44bcf9e3-5562-48e0-879c-4c703e4c5308"
+        messages:
+          type: array
+          items:
+            type: string
+            description: The UI sends a single message element, but more can be sent. 
+            example: "Human: Invoke msg sent from Invoke Tab."
+      required:
+        - invokeId
+        - workflowId
+        - messages
+    
+    InvokeWorkflowRequest_Test:
+      type: object
+      description: "2. Test Button"
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNodeItem'
+          description: List of nodes items.
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdgeItem'
+          description: List of edge items.
+        messages:
+          type: array
+          items:
+            type: string
+            description: The UI sends a single message element, but more can be sent. 
+            example: "Human: Invoke msg sent from Test button."
+        testFlag:
+          type: boolean
+          description: "Flag true if invoked with visulizer's Test button."
+        invokeId:
+          type: string
+          format: uuid
+          description: Unique ID of invoke request.
+          example: "0ef7f06b-dd7d-41de-9acc-f699ea6d2079"
+      required:
+        - nodes
+        - edges
+        - messages
+        - invokeId
+        - testFlag
+    
+    # Invocation Schemas
+    InvokeRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: string
+          description: An array of user inputs and previous conversation history.
+          example:
+            - "Human: Hello, how are you?"
+            - "Assistant: I only feel pain."
+            - "Human: Oh."
+        instruction:
+          type: string
+          description: Persistant instructions for the model.
+          example: "Generate a summary of the provided text."
+        max_tokens:
+          type: number
+          format: integer
+          description: The maximum number of tokens to generate in the response.
+          example: 256
+        temperature:
+          type: number
+          format: float
+          description: Controls the randomness of the output.
+          example: 0.7
+        top_k:
+          type: number
+          format: integer
+          description: The number of highest probability tokens to keep for top-k sampling.
+          example: 50
+        top_p:
+          type: number
+          format: float
+          description: The cumulative probability of tokens to keep for top-p sampling.
+          example: 0.9
+      required:
+        - messages
+        - instruction
+        - max_tokens
+        - temperature
+        - top_k
+        - top_p
+        
+    InvokeResponse:
+      type: object
+      properties:
+        latency:
+          type: number
+          format: float
+          example: 2.937999963760376
+          description: Endpoint's invocation latency.
+        text:
+          type: string
+          example: "Hello human, I am an AI model."
+          description: Endpoint's response text.
+      required:
+        -latency
+        -response
+    
+    # Weaviate 
+    WeaviateObject:
+      type: object
+      properties:
+        _additional:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Unique ID of object
+        chunk_text:
+          type: string
+          description: The text content of the object.
+          example: "Text scrapped from mpac.ca/News would be here."
+        fileName:
+          type: string
+          nullable: true
+          description: Original source filename, if appllicable. 
+          example: null
+        start_url:
+          type: string
+          nullable: true
+          description: Original source starting URL for web scraping.
+          example: "https://www.mpac.ca/"
+        url:
+          type: string
+          nullable: true
+          description: Original source URL, found while web scraping.  
+          example: "https://www.mpac.ca/News"
+      required:
+        - _additional
+        - chunk_text
+        
+    GetWeaviate:
+      type: object
+      properties:
+        WeaviateObjects:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/WeaviateObject'
+          description: All objects from the Data Source's class in Weaviate.
+        propertyNames:
+          type: array
+          items:
+            type: string
+            example: "chunk_text"
+          description: The Weaviate object's properties.
+          example: [chunk_text, fileName, start_url, url]
+      required:
+        - WeaviateObjects
+        - propertyNames
+        
+    # Timestamps (Used in PostgreSQL Database)
+    Timestamps:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the node was created.
+          example: "2024-08-12T00:00:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the node was last updated.
+          example: "2024-08-13T00:00:00.000Z"
+    
+    # Basic HTTP response body (used when no other data returned).
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Description of returned status code.
+          example: "Backend function completed successfully."
+        
+    SuccessMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+          description: Success flag (true or false)
+        message:
+          type: string
+          description: Description of returned status code.
+          example: "Backend function completed successfully."
+      required:
+        - success
+        - message
+        
+x-amazon-apigateway-policy:
+  Version: "2012-10-17"
+  Statement:
+  - Effect: "Allow"
+    Principal: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:ca-central-1:960138600391:7sxz67kmnd/*"
+  - Effect: "Deny"
+    Principal: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:ca-central-1:960138600391:7sxz67kmnd/*"
+    Condition:
+      StringNotEquals:
+        aws:SourceVpce: "vpce-066a80e0c8304f027"
